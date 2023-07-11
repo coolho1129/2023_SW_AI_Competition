@@ -209,17 +209,19 @@ def run():
     # print(len(train_dataset_df))
     train_dataset_df.to_csv('./train_dataset.csv', index=False)
     valid_dataset_df = valid_dataset_df.reset_index(drop=True)
-    # print(valid_dataset_df.head())
-    # print(len(valid_dataset_df))
+    print(valid_dataset_df.head())
+    print(len(valid_dataset_df))
     train_dataset_df.to_csv('./valid_dataset.csv', index=False)
     train_dataset = SatelliteDataset(csv_file='./train_dataset.csv', transform=transform)
     valid_dataset = SatelliteDataset(csv_file='./valid_dataset.csv', transform=transform)
     
     
     train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=4)
-    valid_dataloader = DataLoader(valid_dataset, batch_size=16, shuffle=True, num_workers=4)
+    valid_dataloader = DataLoader(valid_dataset, batch_size=16, shuffle=False, num_workers=4)
     
     valid_ground_truth_df = valid_dataset_df[['img_id', 'mask_rle']]
+    print(valid_ground_truth_df.head())
+    print(len(valid_dataset_df))
 
     # model 초기화
     model = UNet().to(device)
