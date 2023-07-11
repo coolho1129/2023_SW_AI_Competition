@@ -191,20 +191,35 @@ def run():
         ]
     )
 
-    dataset = SatelliteDataset(csv_file='./train.csv', transform=transform)
     
+    dataset_df = pd.read_csv('./train.csv')
+    # print(dataset_df.head())
+    # print(len(dataset_df))
+    # print()
     # train, validation dataset을 8:2 비율로 나눔
-    dataset_size = len(dataset)
-    train_size = int(dataset_size * 0.8)
-    validation_size = int(dataset_size * 0.2)
-    train_dataset, valid_dataset = random_split(dataset, [train_size, validation_size])
+    train_dataset_df = dataset_df.sample(frac=0.8)
+    # print(train_dataset_df.head())
+    # print(len(train_dataset_df))
+    valid_dataset_df = dataset_df.drop(train_dataset_df.index)
+    # print(valid_dataset_df.head())
+    # print(len(valid_dataset_df))
+    
+    train_dataset_df = train_dataset_df.reset_index(drop=True)
+    # print(train_dataset_df.head())
+    # print(len(train_dataset_df))
+    train_dataset_df.to_csv('./train_dataset.csv', index=False)
+    valid_dataset_df = valid_dataset_df.reset_index(drop=True)
+    # print(valid_dataset_df.head())
+    # print(len(valid_dataset_df))
+    train_dataset_df.to_csv('./valid_dataset.csv', index=False)
+    train_dataset = SatelliteDataset(csv_file='./train_dataset.csv', transform=transform)
+    valid_dataset = SatelliteDataset(csv_file='./valid_dataset.csv', transform=transform)
+    
+    
     train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=4)
     valid_dataloader = DataLoader(valid_dataset, batch_size=16, shuffle=True, num_workers=4)
     
-    # valid_dataset에 해당하는 세 번째 열을 가져와서 list 형태로 저장
-    valid_ground_truth = list(valid_dataset.dataset.data.iloc[:, 2])
-    valid_ground_truth_df = pd.DataFrame({'img_id': valid_dataset.dataset.data['img_id'].values, 'mask_rle': valid_ground_truth})
-    #print(valid_ground_truth)
+    valid_ground_truth_df = valid_dataset_df[['img_id', 'mask_rle']]
 
     # model 초기화
     model = UNet().to(device)
@@ -253,7 +268,7 @@ def run():
                     val_result.append(mask_rle)
 
         # val_result 를 dataframe 형태로 저장
-        valid_prediction_df = pd.DataFrame({'img_id': valid_dataset.dataset.data['img_id'].values, 'mask_rle': val_result})
+        valid_prediction_df = pd.DataFrame({'img_id': list(valid_dataset_df['img_id'].values), 'mask_rle': val_result})
 
         # Calculate Dice Score
         dice_scores = calculate_dice_scores(valid_prediction_df, valid_ground_truth_df)
@@ -262,32 +277,6 @@ def run():
         print("Mean Dice Score:", mean_dice_score)
     
     
-    # test dataset에 대한 예측
-    test_dataset = SatelliteDataset(csv_file='./test.csv', transform=transform, infer=True)
-    test_dataloader = DataLoader(test_dataset, batch_size=16, shuffle=False, num_workers=4)
-
-    with torch.no_grad():
-        model.eval()
-        result = []
-        for images in tqdm(test_dataloader):
-            images = images.float().to(device)
-            
-            outputs = model(images)
-            masks = torch.sigmoid(outputs).cpu().numpy()
-            masks = np.squeeze(masks, axis=1)
-            masks = (masks > 0.35).astype(np.uint8) # Threshold = 0.35
-            
-            for i in range(len(images)):
-                mask_rle = rle_encode(masks[i])
-                if mask_rle == '': # 예측된 건물 픽셀이 아예 없는 경우 -1
-                    result.append(-1)
-                else:
-                    result.append(mask_rle)
-
-    submit = pd.read_csv('./sample_submission.csv')
-    submit['mask_rle'] = result
-
-    submit.to_csv('./submit.csv', index=False)
 
 if __name__=='__main__':
     run()
