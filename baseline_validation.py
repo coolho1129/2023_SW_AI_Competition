@@ -49,7 +49,9 @@ class SatelliteDataset(Dataset):
 
         return image, mask
 
-    # 간단한 U-Net 모델 정의
+
+
+# 간단한 U-Net 모델 정의
 class UNet(nn.Module):
     def __init__(self):
         super(UNet, self).__init__()
@@ -125,7 +127,6 @@ def double_conv(in_channels, out_channels):
     )
 
 
-
 def dice_score(prediction: np.array, ground_truth: np.array, smooth=1e-7) -> float:
     '''
     Calculate Dice Score between two binary masks.
@@ -170,6 +171,47 @@ def calculate_dice_scores(ground_truth_df, prediction_df, img_shape=(224, 224)) 
 
     return np.mean(dice_scores)
 
+import matplotlib.pyplot as plt
+
+def visualize_images(dataset: Dataset, num_images: int = 10):
+    fig = plt.figure(figsize=(12, 6))
+    for i in range(num_images):
+        image, mask = dataset[i]
+        image = image.permute(1, 2, 0)  # Transpose the image tensor
+        ax = fig.add_subplot(2, num_images // 2, i + 1)
+        ax.imshow(image)
+        ax.imshow(mask, alpha=0.3)
+        ax.axis('off')
+    plt.tight_layout()
+    plt.show()
+    
+def visualize_predictions(ground_truth_df: pd.DataFrame, prediction_df: pd.DataFrame, dataset: Dataset, num_images: int = 5):
+    fig, axes = plt.subplots(num_images, 2, figsize=(12, 12))
+    for i in range(num_images):
+        img_id = ground_truth_df['img_id'].iloc[i]
+        ground_truth_mask_rle = ground_truth_df['mask_rle'].iloc[i]
+        predicted_mask_rle = prediction_df[prediction_df['img_id'] == img_id]['mask_rle'].values[0]
+
+        image, _ = dataset[i]
+        image = image.permute(1, 2, 0)
+
+        ground_truth_mask = rle_decode(ground_truth_mask_rle, image.shape[:2])
+        predicted_mask = rle_decode(predicted_mask_rle, image.shape[:2])
+
+        axes[i, 0].imshow(image)
+        axes[i, 0].imshow(ground_truth_mask, alpha=0.3)
+        axes[i, 0].set_title('Ground Truth')
+        axes[i, 0].axis('off')
+
+        axes[i, 1].imshow(image)
+        axes[i, 1].imshow(predicted_mask, alpha=0.3)
+        axes[i, 1].set_title('Predicted')
+        axes[i, 1].axis('off')
+
+    plt.tight_layout()
+    plt.show()
+
+
 
 def run():
     freeze_support()
@@ -196,6 +238,7 @@ def run():
     # print(dataset_df.head())
     # print(len(dataset_df))
     # print()
+    
     # train, validation dataset을 8:2 비율로 나눔
     train_dataset_df = dataset_df.sample(frac=0.8)
     # print(train_dataset_df.head())
@@ -211,10 +254,15 @@ def run():
     valid_dataset_df = valid_dataset_df.reset_index(drop=True)
     print(valid_dataset_df.head())
     print(len(valid_dataset_df))
-    train_dataset_df.to_csv('./valid_dataset.csv', index=False)
+    valid_dataset_df.to_csv('./valid_dataset.csv', index=False)
     train_dataset = SatelliteDataset(csv_file='./train_dataset.csv', transform=transform)
     valid_dataset = SatelliteDataset(csv_file='./valid_dataset.csv', transform=transform)
-    
+    # Visualize the top 10 images from the training dataset
+    visualize_images(train_dataset, num_images=10)
+    print()
+    # Visualize the top 10 images from the training dataset
+    visualize_images(valid_dataset, num_images=10)
+
     
     train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=4)
     valid_dataloader = DataLoader(valid_dataset, batch_size=16, shuffle=False, num_workers=4)
@@ -223,6 +271,7 @@ def run():
     print(valid_ground_truth_df.head())
     print(len(valid_dataset_df))
 
+"""    
     # model 초기화
     model = UNet().to(device)
 
@@ -278,6 +327,13 @@ def run():
 
         print("Mean Dice Score:", mean_dice_score)
     
+    # Visualize the top 5 ground truth and predicted masks from the validation dataset
+    visualize_predictions(valid_ground_truth_df, valid_prediction_df, valid_dataset, num_images=5)
+        
+
+
+
+"""
     
 
 if __name__=='__main__':
