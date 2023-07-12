@@ -188,10 +188,12 @@ def visualize_images(dataset: Dataset, num_images: int = 10):
         image = image.permute(1, 2, 0)  # Transpose the image tensor
         ax = fig.add_subplot(2, num_images // 2, i + 1)
         ax.imshow(image)
-        ax.imshow(mask, alpha=0.3)
+        ax.imshow(mask, alpha=0.3, cmap='Reds')
         ax.axis('off')
     plt.tight_layout()
-    plt.show()
+    plt.show(bloack=False)
+    plt.pause(10)
+    plt.close()
 
 
 def visualize_predictions(ground_truth_df: pd.DataFrame, prediction_df: pd.DataFrame, dataset: Dataset,
@@ -209,17 +211,19 @@ def visualize_predictions(ground_truth_df: pd.DataFrame, prediction_df: pd.DataF
         predicted_mask = rle_decode(predicted_mask_rle, image.shape[:2])
 
         axes[i, 0].imshow(image)
-        axes[i, 0].imshow(ground_truth_mask, alpha=0.3)
+        axes[i, 0].imshow(ground_truth_mask, alpha=0.3,cmap='Reds')
         axes[i, 0].set_title('Ground Truth')
         axes[i, 0].axis('off')
 
         axes[i, 1].imshow(image)
-        axes[i, 1].imshow(predicted_mask, alpha=0.3)
+        axes[i, 1].imshow(predicted_mask, alpha=0.3,cmap='Reds')
         axes[i, 1].set_title('Predicted')
         axes[i, 1].axis('off')
 
     plt.tight_layout()
-    plt.show()
+    plt.show(bloack=False)
+    plt.pause(10)
+    plt.close()
 
 
 def run():
