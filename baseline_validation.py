@@ -180,13 +180,15 @@ def visualize_images(dataset: Dataset, num_images: int = 10):
         image = image.permute(1, 2, 0)  # Transpose the image tensor
         ax = fig.add_subplot(2, num_images // 2, i + 1)
         ax.imshow(image)
-        ax.imshow(mask, alpha=0.3)
+        ax.imshow(mask, alpha=0.7)
         ax.axis('off')
     plt.tight_layout()
-    plt.show()
+    plt.show(block=False)
+    plt.pause(10)
+    plt.close()
     
 def visualize_predictions(ground_truth_df: pd.DataFrame, prediction_df: pd.DataFrame, dataset: Dataset, num_images: int = 5):
-    fig, axes = plt.subplots(num_images, 2, figsize=(12, 12))
+    fig, axes = plt.subplots(2,num_images, figsize=(12, 12))
     for i in range(num_images):
         img_id = ground_truth_df['img_id'].iloc[i]
         ground_truth_mask_rle = ground_truth_df['mask_rle'].iloc[i]
@@ -198,18 +200,20 @@ def visualize_predictions(ground_truth_df: pd.DataFrame, prediction_df: pd.DataF
         ground_truth_mask = rle_decode(ground_truth_mask_rle, image.shape[:2])
         predicted_mask = rle_decode(predicted_mask_rle, image.shape[:2])
 
-        axes[i, 0].imshow(image)
-        axes[i, 0].imshow(ground_truth_mask, alpha=0.3)
-        axes[i, 0].set_title('Ground Truth')
-        axes[i, 0].axis('off')
+        axes[0, i].imshow(image)
+        axes[0, i].imshow(ground_truth_mask, alpha=0.7)
+        axes[0, i].set_title('Ground Truth'+str(img_id))
+        axes[0, i].axis('off')
 
-        axes[i, 1].imshow(image)
-        axes[i, 1].imshow(predicted_mask, alpha=0.3)
-        axes[i, 1].set_title('Predicted')
-        axes[i, 1].axis('off')
+        axes[1, i].imshow(image)
+        axes[1, i].imshow(predicted_mask, alpha=0.7)
+        axes[1, i].set_title('Predicted'+str(img_id))
+        axes[1, i].axis('off')
 
     plt.tight_layout()
-    plt.show()
+    plt.show(block=False)
+    plt.pause(10)
+    plt.close()
 
 
 
@@ -244,7 +248,7 @@ def run():
     # print(train_dataset_df.head())
     # print(len(train_dataset_df))
     valid_dataset_df = dataset_df.drop(train_dataset_df.index)
-    # print(valid_dataset_df.head())
+    print(valid_dataset_df.head())
     # print(len(valid_dataset_df))
     
     train_dataset_df = train_dataset_df.reset_index(drop=True)
@@ -252,26 +256,26 @@ def run():
     # print(len(train_dataset_df))
     train_dataset_df.to_csv('./train_dataset.csv', index=False)
     valid_dataset_df = valid_dataset_df.reset_index(drop=True)
-    print(valid_dataset_df.head())
-    print(len(valid_dataset_df))
+    # print(valid_dataset_df.head())
+    # print(len(valid_dataset_df))
+    valid_ground_truth_df = valid_dataset_df[['img_id', 'mask_rle']]
+    valid_dataset_df = valid_dataset_df[['img_id', 'img_path']]
     valid_dataset_df.to_csv('./valid_dataset.csv', index=False)
     train_dataset = SatelliteDataset(csv_file='./train_dataset.csv', transform=transform)
-    valid_dataset = SatelliteDataset(csv_file='./valid_dataset.csv', transform=transform)
+    
     # Visualize the top 10 images from the training dataset
     visualize_images(train_dataset, num_images=10)
     print()
-    # Visualize the top 10 images from the training dataset
-    visualize_images(valid_dataset, num_images=10)
-
+  
     
     train_dataloader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=4)
-    valid_dataloader = DataLoader(valid_dataset, batch_size=16, shuffle=False, num_workers=4)
     
-    valid_ground_truth_df = valid_dataset_df[['img_id', 'mask_rle']]
-    print(valid_ground_truth_df.head())
-    print(len(valid_dataset_df))
+    
+    
+    # print(valid_ground_truth_df.head())
+    # print(len(valid_dataset_df))
 
-"""    
+  
     # model 초기화
     model = UNet().to(device)
 
@@ -280,7 +284,7 @@ def run():
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
     # training loop
-    epoches=50
+    epoches=10
     for epoch in range(epoches):  #  epoches 동안 학습합니다.
         model.train()
         epoch_loss = 0
@@ -299,6 +303,10 @@ def run():
 
         print(f'Epoch {epoch+1}, Loss: {epoch_loss/len(train_dataloader)}')
 
+    
+    valid_dataset = SatelliteDataset(csv_file='./valid_dataset.csv', transform=transform)
+    valid_dataloader = DataLoader(valid_dataset, batch_size=16, shuffle=False, num_workers=4)
+    
     # validation loop
     with torch.no_grad():
         model.eval()
@@ -330,10 +338,6 @@ def run():
     # Visualize the top 5 ground truth and predicted masks from the validation dataset
     visualize_predictions(valid_ground_truth_df, valid_prediction_df, valid_dataset, num_images=5)
         
-
-
-
-"""
     
 
 if __name__=='__main__':
