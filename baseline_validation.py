@@ -190,30 +190,42 @@ def visualize_images(dataset: Dataset, num_images: int = 10):
 def visualize_predictions(ground_truth_df: pd.DataFrame, prediction_df: pd.DataFrame, dataset: Dataset, num_images: int = 5):
     fig, axes = plt.subplots(2,num_images, figsize=(12, 12))
     for i in range(num_images):
-        img_id = ground_truth_df['img_id'].iloc[i]
-        ground_truth_mask_rle = ground_truth_df['mask_rle'].iloc[i]
-        predicted_mask_rle = prediction_df[prediction_df['img_id'] == img_id]['mask_rle'].values[0]
+        img_id = prediction_df['img_id'].iloc[i]
+        predicted_mask_rle = prediction_df['mask_rle'].iloc[i]
+        ground_truth_mask_rle = ground_truth_df[ground_truth_df['img_id'] == img_id]['mask_rle'].values[0]
 
         image = dataset[i]
         image = image.permute(1, 2, 0)
 
-        ground_truth_mask = rle_decode(ground_truth_mask_rle, image.shape[:2])
-        predicted_mask = rle_decode(predicted_mask_rle, image.shape[:2])
+        ground_truth_mask = rle_decode(ground_truth_mask_rle, (image.shape[0], image.shape[1]))
+        predicted_mask = rle_decode(predicted_mask_rle, (image.shape[0], image.shape[1]))
 
-        axes[1, i].imshow(image)
-        axes[1, i].imshow(ground_truth_mask, alpha=0.7)
-        axes[1, i].set_title('Ground Truth '+str(img_id))
-        axes[1, i].axis('off')
+        # axes[0, i].imshow(image)
+        # axes[0, i].imshow(predicted_mask, alpha=0.7)
+        # axes[0, i].set_title('Predicted '+str(img_id))
+        # axes[0, i].axis('off')
+        
+        # axes[1, i].imshow(image)
+        # axes[1, i].imshow(ground_truth_mask, alpha=0.7)
+        # axes[1, i].set_title('Ground Truth '+str(img_id))
+        # axes[1, i].axis('off')
 
         axes[0, i].imshow(image)
-        axes[0, i].imshow(predicted_mask, alpha=0.7)
-        axes[0, i].set_title('Predicted '+str(img_id))
+        axes[0, i].imshow(ground_truth_mask, alpha=0.7)
+        axes[0, i].set_title('Ground Truth '+str(img_id))
         axes[0, i].axis('off')
 
+        # axes[1, i].imshow(image)
+        # axes[1, i].imshow(predicted_mask, alpha=0.7)
+        # axes[1, i].set_title('Predicted '+str(img_id))
+        # axes[1, i].axis('off')
+
+
     plt.tight_layout()
-    plt.show(block=False)
-    plt.pause(10)
-    plt.close()
+    plt.show()
+    # plt.show(block=False)
+    # plt.pause(10)
+    # plt.close()
 
 
 def run():
@@ -283,25 +295,29 @@ def run():
     criterion = torch.nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
-    # training loop
-    epoches=10
-    for epoch in range(epoches):  #  epoches 동안 학습합니다.
-         model.train()
-         epoch_loss = 0
-         for images, masks in tqdm(train_dataloader):
-             images = images.float().to(device)
-             masks = masks.float().to(device)
+    # # training loop
+    # epoches=10
+    # for epoch in range(epoches):  #  epoches 동안 학습합니다.
+    #      model.train()
+    #      epoch_loss = 0
+    #      for images, masks in tqdm(train_dataloader):
+    #          images = images.float().to(device)
+    #          masks = masks.float().to(device)
 
-             optimizer.zero_grad()
-             outputs = model(images)
-             loss = criterion(outputs, masks.unsqueeze(1))
-             loss.backward()
-             optimizer.step()
+    #          optimizer.zero_grad()
+    #          outputs = model(images)
+    #          loss = criterion(outputs, masks.unsqueeze(1))
+    #          loss.backward()
+    #          optimizer.step()
 
 
-             epoch_loss += loss.item()
+    #          epoch_loss += loss.item()
 
-         print(f'Epoch {epoch+1}, Loss: {epoch_loss/len(train_dataloader)}')
+    #      print(f'Epoch {epoch+1}, Loss: {epoch_loss/len(train_dataloader)}')
+
+    #저장된 모델 불러오기
+    model_state_dict = torch.load("./baseline_validation.pt", map_location=device)
+    model.load_state_dict(model_state_dict)
 
     valid_dataset = SatelliteDataset(csv_file='./valid_dataset.csv', transform=transform,infer=True)
     valid_dataloader = DataLoader(valid_dataset, batch_size=16, shuffle=False, num_workers=4)
@@ -328,20 +344,26 @@ def run():
         # val_result 를 dataframe 형태로 저장
         valid_prediction_df = pd.DataFrame({'img_id': list(valid_dataset_df['img_id'].values), 'mask_rle': val_result})
         valid_prediction_df.to_csv("./valid_prediction.csv",index=False)
-        valid_prediction_df=pd.read_csv('./valid_prediction.csv')
+        
+        
+        valid_ground_truth_dataset=SatelliteDataset(csv_file='./valid_ground_truth.csv', transform=transform,infer=False)
+        valid_prediction_dataset = SatelliteDataset(csv_file='./valid_prediction.csv', transform=transform,infer=False)
+        
         print(valid_ground_truth_df.head())
         print(len(valid_dataset_df))
         print(valid_prediction_df.head())
         print(len(valid_prediction_df))
 
         # Calculate Dice Score
+        valid_prediction_df=pd.read_csv('./valid_prediction.csv')
         dice_scores = calculate_dice_scores(valid_prediction_df, valid_ground_truth_df)
         mean_dice_score = np.mean(dice_scores)
-
+        visualize_images(valid_ground_truth_dataset, num_images=10)
+        visualize_images(valid_prediction_dataset, num_images=10)
         print("Mean Dice Score:", mean_dice_score)
     
     # Visualize the top 5 ground truth and predicted masks from the validation dataset
-    visualize_predictions(valid_ground_truth_df, valid_prediction_df, valid_dataset, num_images=5)
+    #visualize_predictions(valid_ground_truth_df, valid_prediction_df, valid_dataset, num_images=5)
         
     
 
