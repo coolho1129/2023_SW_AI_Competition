@@ -18,9 +18,11 @@ from albumentations.pytorch import ToTensorV2
 import gc
 
 class SatelliteDataset(Dataset):
-    def __init__(self, csv_file, transform=None, infer=False):
+    def __init__(self, csv_file, patch_size, stride, transform=None, infer=False):
         self.data = pd.read_csv(csv_file)
         self.transform = transform
+        self.patch_size = patch_size
+        self.stride = stride
         self.infer = infer
 
     def __len__(self):
@@ -30,23 +32,41 @@ class SatelliteDataset(Dataset):
         img_path = self.data.iloc[idx, 1]
         image = cv2.imread(img_path)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-        
+
         if self.infer:
-            if self.transform:
-                image = self.transform(image=image)['image']
-            return image
+            patches = split_image(image, self.patch_size, self.stride)
+            transformed_patches = [self.transform(image=patch)["image"] for patch in patches]
+            return transformed_patches
 
         mask_rle = self.data.iloc[idx, 2]
         mask = rle_decode(mask_rle, (image.shape[0], image.shape[1]))
 
-        if self.transform:
-            augmented = self.transform(image=image, mask=mask)
-            image = augmented['image']
-            mask = augmented['mask']
+        patches = split_image(image, self.patch_size, self.stride)
+        mask_patches = split_mask(mask, self.patch_size, self.stride)
+        transformed_patches = [self.transform(image=patch, mask=mask)["image"] for patch,mask in zip(patches, mask_patches)]
+        transformed_masks = [self.transform(image=patch, mask=mask)["mask"] for patch,mask in zip(patches, mask_patches)]
 
-        return image, mask
+        return transformed_patches, transformed_masks
 
-    # 간단한 U-Net 모델 정의
+
+def split_image(image, patch_size, stride):
+    patches = []
+    height, width = image.shape[:2]
+    for y in range(0, height - patch_size + 1, stride):
+        for x in range(0, width - patch_size + 1, stride):
+            patch = image[y:y+patch_size, x:x+patch_size, :]
+            patches.append(patch)
+    return patches
+
+def split_mask(mask, patch_size, stride):
+    patches = []
+    height, width = mask.shape[:2]
+    for y in range(0, height - patch_size + 1, stride):
+        for x in range(0, width - patch_size + 1, stride):
+            patch = mask[y:y+patch_size, x:x+patch_size]
+            patches.append(patch)
+    return patches
+
 class UNet(nn.Module):
     def __init__(self):
         super(UNet, self).__init__()
@@ -93,6 +113,15 @@ class UNet(nn.Module):
 
         return out
 
+    def double_conv(in_channels, out_channels):
+        return nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, 3, padding=1),
+            nn.ReLU(inplace=True),
+            nn.Conv2d(out_channels, out_channels, 3, padding=1),
+            nn.ReLU(inplace=True)
+        )
+
+
 # RLE 디코딩 함수
 def rle_decode(mask_rle, shape):
     s = mask_rle.split()
@@ -112,15 +141,6 @@ def rle_encode(mask):
     runs[1::2] -= runs[::2]
     return ' '.join(str(x) for x in runs)
 
-# U-Net의 기본 구성 요소인 Double Convolution Block을 정의합니다.
-def double_conv(in_channels, out_channels):
-    return nn.Sequential(
-        nn.Conv2d(in_channels, out_channels, 3, padding=1),
-        nn.ReLU(inplace=True),
-        nn.Conv2d(out_channels, out_channels, 3, padding=1),
-        nn.ReLU(inplace=True)
-    )
-
 def run():
     freeze_support()
 
@@ -128,19 +148,21 @@ def run():
     torch.cuda.empty_cache()
 
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    print(device)
 
     transform = A.Compose(
         [   
-            A.Resize(224, 224),
             A.Normalize(),
             ToTensorV2()
         ]
     )
 
-    dataset = SatelliteDataset(csv_file='./train.csv', transform=transform)
+    patch_size = 224  # 패치 크기
+    stride = 112  # 스트라이드
+
+    dataset = SatelliteDataset(csv_file='./train.csv', transform=transform, patch_size=patch_size, stride=stride)
     dataloader = DataLoader(dataset, batch_size=16, shuffle=True, num_workers=4)
 
-    
     # model 초기화
     model = UNet().to(device)
 
@@ -153,39 +175,41 @@ def run():
         model.train()
         epoch_loss = 0
         for images, masks in tqdm(dataloader):
-            images = images.float().to(device)
-            masks = masks.float().to(device)
+            for image, mask in zip(images, masks):
+                image = image.float().to(device)
+                mask = mask.float().to(device)
 
-            optimizer.zero_grad()
-            outputs = model(images)
-            loss = criterion(outputs, masks.unsqueeze(1))
-            loss.backward()
-            optimizer.step()
+                optimizer.zero_grad()
+                outputs = model(image)
+                loss = criterion(outputs, mask.unsqueeze(1))
+                loss.backward()
+                optimizer.step()
 
-            epoch_loss += loss.item()
+                epoch_loss += loss.item()
 
         print(f'Epoch {epoch+1}, Loss: {epoch_loss/len(dataloader)}')
 
-    test_dataset = SatelliteDataset(csv_file='./test.csv', transform=transform, infer=True)
+    test_dataset = SatelliteDataset(csv_file='./test.csv', transform=transform, infer=True, patch_size=patch_size, stride=stride)
     test_dataloader = DataLoader(test_dataset, batch_size=16, shuffle=False, num_workers=4)
 
     with torch.no_grad():
         model.eval()
         result = []
         for images in tqdm(test_dataloader):
-            images = images.float().to(device)
-            
-            outputs = model(images)
-            masks = torch.sigmoid(outputs).cpu().numpy()
-            masks = np.squeeze(masks, axis=1)
-            masks = (masks > 0.35).astype(np.uint8) # Threshold = 0.35
-            
-            for i in range(len(images)):
-                mask_rle = rle_encode(masks[i])
-                if mask_rle == '': # 예측된 건물 픽셀이 아예 없는 경우 -1
-                    result.append(-1)
-                else:
-                    result.append(mask_rle)
+            for image, mask in zip(images, masks):
+                image = image.float().to(device)
+                
+                outputs = model(image)
+                mask = torch.sigmoid(outputs).cpu().numpy()
+                mask = np.squeeze(mask, axis=1)
+                mask = (mask > 0.35).astype(np.uint8) # Threshold = 0.35
+
+                for i in range(len(image)):
+                    mask_rle = rle_encode(mask[i])
+                    if mask_rle == '': # 예측된 건물 픽셀이 아예 없는 경우 -1
+                        result.append(-1)
+                    else:
+                        result.append(mask_rle)
 
     submit = pd.read_csv('./sample_submission.csv')
     submit['mask_rle'] = result
