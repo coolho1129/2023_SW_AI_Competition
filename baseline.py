@@ -1,4 +1,3 @@
-
 import os
 import cv2
 import pandas as pd
@@ -20,8 +19,6 @@ import albumentations as A
 from albumentations.pytorch import ToTensorV2
 
 import gc
-import matplotlib.pyplot as plt
-
 
 class SatelliteDataset(Dataset):
     def __init__(self, csv_file, patch_size, stride, transform=None, infer=False):
@@ -76,19 +73,20 @@ def split_mask(mask, patch_size, stride):
 
     # 간단한 U-Net 모델 정의
 class UNet(nn.Module):
+    
     def __init__(self):
         super(UNet, self).__init__()
-        self.dconv_down1 = double_conv(3, 64)
-        self.dconv_down2 = double_conv(64, 128)
-        self.dconv_down3 = double_conv(128, 256)
-        self.dconv_down4 = double_conv(256, 512)
+        self.dconv_down1 = self.double_conv(3, 64)
+        self.dconv_down2 = self.double_conv(64, 128)
+        self.dconv_down3 = self.double_conv(128, 256)
+        self.dconv_down4 = self.double_conv(256, 512)
 
         self.maxpool = nn.MaxPool2d(2)
         self.upsample = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)        
 
-        self.dconv_up3 = double_conv(256 + 512, 256)
-        self.dconv_up2 = double_conv(128 + 256, 128)
-        self.dconv_up1 = double_conv(128 + 64, 64)
+        self.dconv_up3 = self.double_conv(256 + 512, 256)
+        self.dconv_up2 = self.double_conv(128 + 256, 128)
+        self.dconv_up1 = self.double_conv(128 + 64, 64)
 
         self.conv_last = nn.Conv2d(64, 1, 1)
 
@@ -120,8 +118,8 @@ class UNet(nn.Module):
         out = self.conv_last(x)
 
         return out
-
-    def double_conv(in_channels, out_channels):
+    
+    def double_conv(self, in_channels, out_channels):
         return nn.Sequential(
             nn.Conv2d(in_channels, out_channels, 3, padding=1),
             nn.ReLU(inplace=True),
@@ -169,14 +167,14 @@ def init():
     
 
 def set_train_dataset(path,transform):
-    dataset = SatelliteDataset(csv_file=path, transform=transform)
-    dataloader = DataLoader(dataset, batch_size=batsize, shuffle=True, num_workers=4)
+    dataset = SatelliteDataset(csv_file=path, transform=transform, patch_size=patch_size, stride=stride)
+    dataloader = DataLoader(dataset, batch_size=batchsize, shuffle=True, num_workers=4)
 
     return dataset,dataloader
 
 def set_test_dataset(path,transform):
-    dataset = SatelliteDataset(csv_file=path, transform=transform,infer=True)
-    dataloader = DataLoader(dataset, batch_size=batsize, shuffle=False, num_workers=4)
+    dataset = SatelliteDataset(csv_file=path, transform=transform, infer=True, patch_size=patch_size, stride=stride)
+    dataloader = DataLoader(dataset, batch_size=batchsize, shuffle=False, num_workers=4)
 
     return dataset,dataloader
 
@@ -205,11 +203,11 @@ def train(model,criterion,optimizer,dataloader):
     
     return model
 
-def predict(model,dataloader):
+def predict(model,test_dataloader):
     with torch.no_grad():
         model.eval()
         result = []
-        for images in tqdm(test_dataloader):
+        for images, masks in tqdm(test_dataloader):
             for image, mask in zip(images, masks):
                 image = image.float().to(device)
                 
@@ -247,6 +245,15 @@ def load_model(model,path):
     return model
 
 def main():
+
+    global patch_size, stride
+    patch_size = 224  # 패치 크기
+    stride = 100  # 스트라이드
+
+      #epoches 및 batsize설정
+    global epoches, batchsize
+    epoches = 100
+    batchsize = 16
     
     init()
     
@@ -257,7 +264,8 @@ def main():
             ToTensorV2()
         ]
     )
-  
+
+
     #train dataset 설정
     train_dataset,train_dataloader=set_train_dataset(TRAINPATH,transform) 
 
@@ -268,10 +276,7 @@ def main():
     criterion = torch.nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     
-    #epoches 및 batsize설정
-    global epoches,batsize
-    epoches=1
-    batchsize=16
+  
     
     #학습
     train(model,criterion,optimizer,train_dataloader)
