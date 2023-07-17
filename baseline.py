@@ -199,6 +199,8 @@ def train(model,criterion,optimizer,dataloader):
 
                 epoch_loss += loss.item()
 
+        save_model(model, "./stride100_divided_baseline_", epoch)
+
         print(f'Epoch {epoch+1}, Loss: {epoch_loss/len(dataloader)}')
     
     return model
