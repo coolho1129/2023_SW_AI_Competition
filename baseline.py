@@ -234,6 +234,9 @@ def sumbit_save(result):
     SUBMITPATH='./'+str(SUMMITDIR)+'/'+str(os.path.basename(__file__).split('.')[0]) +'_'+str(epoches)+'.csv'
     submit.to_csv(SUBMITPATH, index=False)
 
+def save_model(model, path, epoch):
+    if(epoch % 10 ==9):
+        torch.save(model, path + str(epoch) + ".pt")
 
 def load_model(model,path):
     model_state_dict = torch.load(path, map_location=device)
