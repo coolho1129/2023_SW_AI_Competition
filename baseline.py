@@ -208,7 +208,7 @@ def predict(model,test_dataloader):
         model.eval()
         result = []
         for images, masks in tqdm(test_dataloader):
-            for image, mask in zip(images, masks):
+            for image in images:
                 image = image.float().to(device)
                 
                 outputs = model(image)
@@ -236,7 +236,7 @@ def sumbit_save(result):
 
 def save_model(model, path, epoch):
     if(epoch % 10 ==9):
-        torch.save(model, path + str(epoch) + ".pt")
+        torch.save(model, path + str(epoch + 1) + ".pt")
 
 def load_model(model,path):
     model_state_dict = torch.load(path, map_location=device)
