@@ -41,9 +41,8 @@ class SatelliteDataset(Dataset):
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         if self.infer:
-            patches = split_image(image, self.patch_size, self.stride)
-            transformed_patches = [self.transform(image=patch)["image"] for patch in patches]
-            return transformed_patches
+            image = self.transform(image=image)['image']
+            return image
 
         mask_rle = self.data.iloc[idx, 2]
         mask = rle_decode(mask_rle, (image.shape[0], image.shape[1]))
@@ -211,21 +210,20 @@ def predict(model,test_dataloader):
     with torch.no_grad():
         model.eval()
         result = []
-         for images in tqdm(test_dataloader):
-            for image in images:
-                image = image.float().to(device)
+         for image in tqdm(test_dataloader):
+            image = image.float().to(device)
                 
-                outputs = model(image)
-                mask = torch.sigmoid(outputs).cpu().numpy()
-                mask = np.squeeze(mask, axis=1)
-                mask = (mask > 0.35).astype(np.uint8) # Threshold = 0.35
+            outputs = model(image)
+            mask = torch.sigmoid(outputs).cpu().numpy()
+            mask = np.squeeze(mask, axis=1)
+            mask = (mask > 0.35).astype(np.uint8) # Threshold = 0.35
 
-                for i in range(len(image)):
-                    mask_rle = rle_encode(mask[i])
-                    if mask_rle == '': # 예측된 건물 픽셀이 아예 없는 경우 -1
-                        result.append(-1)
-                    else:
-                        result.append(mask_rle)
+            for i in range(len(image)):
+                mask_rle = rle_encode(mask[i])
+                if mask_rle == '': # 예측된 건물 픽셀이 아예 없는 경우 -1
+                    result.append(-1)
+                else:
+                    result.append(mask_rle)
     return result
 
 
