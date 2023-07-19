@@ -196,7 +196,7 @@ def run():
         model.eval()
         result = []
         for images in tqdm(test_dataloader):
-            for image, mask in zip(images, masks):
+            for image in images:
                 image = image.float().to(device)
                 
                 outputs = model(image)
