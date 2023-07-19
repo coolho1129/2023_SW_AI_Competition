@@ -11,6 +11,10 @@ import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader, random_split
 from torchvision import transforms
 
+import math
+import torch.nn.functional as F
+import torch.utils.model_zoo as model_zoo
+
 import multiprocessing as mp
 from multiprocessing import freeze_support
 
