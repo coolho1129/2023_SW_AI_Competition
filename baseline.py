@@ -211,7 +211,7 @@ def predict(model,test_dataloader):
     with torch.no_grad():
         model.eval()
         result = []
-        for images, masks in tqdm(test_dataloader):
+         for images in tqdm(test_dataloader):
             for image in images:
                 image = image.float().to(device)
                 
