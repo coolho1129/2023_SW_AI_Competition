@@ -34,9 +34,9 @@ class SatelliteDataset(Dataset):
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         if self.infer:
-            patches = split_image(image, self.patch_size, self.stride)
-            transformed_patches = [self.transform(image=patch)["image"] for patch in patches]
-            return transformed_patches
+            if self.transform:
+                image = self.transform(image=image)['image']
+            return image
 
         mask_rle = self.data.iloc[idx, 2]
         mask = rle_decode(mask_rle, (image.shape[0], image.shape[1]))
