@@ -220,10 +220,7 @@ def main():
     )
 
 
-    #train dataset 설정
-    train_dataset,train_dataloader=set_train_dataset(TRAINPATH,transform) 
-
-    # model 초기화
+   # model 초기화
     model = UNet().to(device)
     #model=DeepLabv3_plus().to(device)
     #model=HRNet(config).to(device)
