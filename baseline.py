@@ -239,12 +239,10 @@ def sumbit_save(result):
 def save_model(model, path, epoch):
     if(epoch % 10 ==9):
         torch.save(model, path + str(epoch + 1) + ".pt")
+        
 
-def load_model(model,path):
-    model_state_dict = torch.load(path, map_location=device)
-    model.load_state_dict(model_state_dict)
-
-    return model
+def load_model(path):
+    return torch.load(path)
 
 def main():
 
