@@ -239,8 +239,10 @@ def sumbit_save(result):
 def save_model(model, path, epoch):
     if(epoch % 10 ==9):
         torch.save(model, path + str(epoch + 1) + ".pt")
+        
 
-
+def load_model(path):
+    return torch.load(path)
 
 def main():
 
@@ -278,7 +280,7 @@ def main():
     train(model,criterion,optimizer,train_dataloader)
 
     #모델 불러오기 위에 문단 4개 주석 처리하기
-    #model = torch.load('./stride112_divided_baseline.pt')
+    #model = load_model('./stride112_divided_baseline.pt')
 
     #test dataset 설정
     test_dataset,test_dataloader=set_test_dataset(TESTPATH,transform)
