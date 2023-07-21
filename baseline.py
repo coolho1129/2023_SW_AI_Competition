@@ -30,6 +30,13 @@ import gc
 import logging
 
 import torch._utils
+
+import torch.utils.model_zoo as model_zoo
+import ssl
+
+ssl._create_default_https_context = ssl._create_unverified_context # _ssl.c:997 에러처리
+
+
 class SatelliteDataset(Dataset):
     def __init__(self, csv_file, patch_size, stride, transform=None, infer=False):
         self.data = pd.read_csv(csv_file)
