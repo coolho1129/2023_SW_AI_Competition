@@ -271,9 +271,11 @@ def main():
         ]
     )
 
+    #train dataset 설정
+    train_dataset,train_dataloader=set_train_dataset(TRAINPATH,transform) 
 
    # model 초기화
-    model = UNet().to(device)
+    #model = UNet().to(device)
     #model=DeepLabv3_plus().to(device)
     #model=HRNet(config).to(device)
     #model=DeepLabv3_plus_Xception().to(device)
@@ -281,9 +283,12 @@ def main():
     # loss function과 optimizer 정의
     criterion = torch.nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+
+    #학습
+    train(model,criterion,optimizer,train_dataloader)
     
     #모델 불러오기
-    model = load_model(MODELPATH)
+    #model = load_model(MODELPATH)
 
     #test dataset 설정
     test_dataset,test_dataloader=set_test_dataset(TESTPATH,transform)
