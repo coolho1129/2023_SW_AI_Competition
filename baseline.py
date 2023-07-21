@@ -227,13 +227,16 @@ def predict(model,test_dataloader):
     return result
 
 
-def sumbit_save(result):
+def sumbit_save(result,name=""):
     submit = pd.read_csv('./sample_submission.csv')
     submit['mask_rle'] = result
     SUMMITDIR='submit'
     if(not os.path.exists(SUMMITDIR) or os.path.isfile(SUMMITDIR)):
         os.mkdir(SUMMITDIR)
-    SUBMITPATH='./'+str(SUMMITDIR)+'/'+str(os.path.basename(__file__).split('.')[0]) +'_'+str(epoches)+'.csv'
+    if(name==""):
+        SUBMITPATH='./'+str(SUMMITDIR)+'/'+str(os.path.basename(__file__).split('.')[0]) +'_'+str(epoches)+'.csv'
+    else:
+        SUBMITPATH='./'+str(SUMMITDIR)+'/'+str(name)+'.csv'
     submit.to_csv(SUBMITPATH, index=False)
 
 def save_model(model, path, epoch):
@@ -246,6 +249,9 @@ def load_model(path):
 
 def main():
 
+    MODELPATH=""
+    MODELNAME=MODELPATH.split('.')[0]
+    
     global patch_size, stride
     patch_size = 224  # 패치 크기
     stride = 100  # 스트라이드
@@ -266,21 +272,18 @@ def main():
     )
 
 
-    #train dataset 설정
-    train_dataset,train_dataloader=set_train_dataset(TRAINPATH,transform) 
-
-    # model 초기화
+   # model 초기화
     model = UNet().to(device)
+    #model=DeepLabv3_plus().to(device)
+    #model=HRNet(config).to(device)
+    #model=DeepLabv3_plus_Xception().to(device)
 
     # loss function과 optimizer 정의
     criterion = torch.nn.BCEWithLogitsLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     
-    #학습
-    train(model,criterion,optimizer,train_dataloader)
-
-    #모델 불러오기 위에 문단 4개 주석 처리하기
-    #model = load_model('./stride112_divided_baseline.pt')
+    #모델 불러오기
+    model = load_model(MODELPATH)
 
     #test dataset 설정
     test_dataset,test_dataloader=set_test_dataset(TESTPATH,transform)
@@ -289,7 +292,7 @@ def main():
     result=predict(model,test_dataloader)
     
     #제출 파일 저장
-    sumbit_save(result)
+    sumbit_save(result, MODELNAME)
 
 if __name__=='__main__':
     main()
