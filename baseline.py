@@ -37,8 +37,9 @@ class SatelliteDataset(Dataset):
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         if self.infer:
-            image = self.transform(image=image)['image']
-            return image
+            patches = split_image(image, self.patch_size, self.stride)
+            transformed_patches = [self.transform(image=patch)["image"] for patch in patches]
+            return transformed_patches
 
         mask_rle = self.data.iloc[idx, 2]
         mask = rle_decode(mask_rle, (image.shape[0], image.shape[1]))
@@ -68,6 +69,7 @@ def split_mask(mask, patch_size, stride):
             patch = mask[y:y+patch_size, x:x+patch_size]
             patches.append(patch)
     return patches
+
     
 # RLE 디코딩 함수
 def rle_decode(mask_rle, shape):
@@ -138,12 +140,11 @@ def train(model,criterion,optimizer,dataloader):
 
                 epoch_loss += loss.item()
 
-        save_model(model, "./stride100_divided_baseline_", epoch)
+        save_model(model, "./stride56_divided_unet_", epoch)
 
         print(f'Epoch {epoch+1}, Loss: {epoch_loss/len(dataloader)}')
     
     return model
-
 def predict(model,test_dataloader):
     with torch.no_grad():
         model.eval()
@@ -213,17 +214,18 @@ def main():
     train_dataset,train_dataloader=set_train_dataset(TRAINPATH,transform) 
 
    # model 초기화
-    #model = UNet().to(device)
+    model = UNet().to(device)
     #model=DeepLabv3_plus(nInputChannels=3, n_classes=1, os=16, pretrained=True).to(device)
+    #model=DeepLabv3_plus_Xception(nInputChannels=3, n_classes=1, os=16, pretrained=True).to(device)
     #model=HRNet(config).to(device)
     
 
     # loss function과 optimizer 정의
-    #criterion = torch.nn.BCEWithLogitsLoss()
-    #optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    criterion = torch.nn.BCEWithLogitsLoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
     #학습
-    #train(model,criterion,optimizer,train_dataloader)
+    train(model,criterion,optimizer,train_dataloader)
     
     #모델 불러오기
     #model = load_model(MODELPATH)
@@ -237,5 +239,5 @@ def main():
     #제출 파일 저장
     sumbit_save(result, MODELNAME)
 
-if __name__=='__main__':
+if __name__== '__main__':
     main()
