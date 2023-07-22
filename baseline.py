@@ -283,60 +283,11 @@ def main():
     #train dataset 설정
     train_dataset,train_dataloader=set_train_dataset(TRAINPATH,transform) 
 
-   def main():
-
-    MODELPATH=""
-    MODELNAME=MODELPATH.split('.')[0]
-    
-    global patch_size, stride
-    patch_size = 224  # 패치 크기
-    stride = 100  # 스트라이드
-
-      #epoches 및 batsize설정
-    global epoches, batchsize
-    epoches = 100
-    batchsize = 16
-    
-    init()
-    
-    # transform 설정
-    transform = A.Compose(
-        [   
-            A.Normalize(),
-            ToTensorV2()
-        ]
-    )
-
-    #train dataset 설정
-    train_dataset,train_dataloader=set_train_dataset(TRAINPATH,transform) 
-
    # model 초기화
     #model = UNet().to(device)
     #model=DeepLabv3_plus(nInputChannels=3, n_classes=1, os=16, pretrained=True).to(device)
     #model=HRNet(config).to(device)
     
-
-    # loss function과 optimizer 정의
-    criterion = torch.nn.BCEWithLogitsLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
-
-    #학습
-    train(model,criterion,optimizer,train_dataloader)
-    
-    #모델 불러오기
-    #model = load_model(MODELPATH)
-
-    #test dataset 설정
-    test_dataset,test_dataloader=set_test_dataset(TESTPATH,transform)
-
-    # 예측
-    result=predict(model,test_dataloader)
-    
-    #제출 파일 저장
-    sumbit_save(result, MODELNAME)
-
-if __name__=='__main__':
-    main()
 
     # loss function과 optimizer 정의
     criterion = torch.nn.BCEWithLogitsLoss()
