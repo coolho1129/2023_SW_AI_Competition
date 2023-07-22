@@ -290,11 +290,11 @@ def main():
     
 
     # loss function과 optimizer 정의
-    criterion = torch.nn.BCEWithLogitsLoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    #criterion = torch.nn.BCEWithLogitsLoss()
+    #optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
 
     #학습
-    train(model,criterion,optimizer,train_dataloader)
+    #train(model,criterion,optimizer,train_dataloader)
     
     #모델 불러오기
     #model = load_model(MODELPATH)
