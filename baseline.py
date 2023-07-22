@@ -4,15 +4,9 @@ import pandas as pd
 import numpy as np
 
 import torch
-import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader, random_split
 from torchvision import transforms
 
-import math
-import torch.nn.functional as F
-import torch.utils.model_zoo as model_zoo
-
-import multiprocessing as mp
 from multiprocessing import freeze_support
 
 from tqdm import tqdm
@@ -198,7 +192,7 @@ def main():
     
     global patch_size, stride
     patch_size = 224  # 패치 크기
-    stride = 100  # 스트라이드
+    stride = 112  # 스트라이드
 
       #epoches 및 batsize설정
     global epoches, batchsize
