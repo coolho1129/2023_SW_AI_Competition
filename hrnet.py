@@ -1,3 +1,13 @@
+import os
+import logging
+
+import numpy as np
+
+import torch
+import torch.nn as nn
+import torch._utils
+import torch.nn.functional as F
+
 BatchNorm2d=BatchNorm2d_class= nn.SyncBatchNorm
 relu_inplace=True
 
@@ -292,7 +302,7 @@ class HRNet(nn.Module):
         self.stage4, pre_stage_channels = self._make_stage(
             self.stage4_cfg, num_channels, multi_scale_output=True)
 
-        last_inp_channels = np.int(np.sum(pre_stage_channels))
+        last_inp_channels = np.int32(np.sum(pre_stage_channels))
 
         self.last_layer = nn.Sequential(
             nn.Conv2d(
@@ -517,4 +527,3 @@ def get_seg_model(device):
     model.init_weights()  # 사전 학습된 가중치로 모델 초기화
 
     return model
-
