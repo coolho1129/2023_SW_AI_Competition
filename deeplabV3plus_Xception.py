@@ -1,3 +1,13 @@
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+import math
+
+import torch.utils.model_zoo as model_zoo
+import ssl       #_ssl.c:997
+
+ssl._create_default_https_context = ssl._create_unverified_context # _ssl.c:997 에러처리
+
 class SeparableConv2d(nn.Module):
     def __init__(self, inplanes, planes, kernel_size=3, stride=1, padding=0, dilation=1, bias=False):
         super(SeparableConv2d, self).__init__()
