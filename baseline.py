@@ -317,7 +317,6 @@ def main():
    # model 초기화
     #model = UNet().to(device)
     #model=DeepLabv3_plus(nInputChannels=3, n_classes=1, os=16, pretrained=True).to(device)
-    model=DeepLabv3_plus(nInputChannels=3, n_classes=21, os=16, pretrained=True, _print=True).to(device)
     #model=HRNet(config).to(device)
     
 
