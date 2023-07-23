@@ -190,7 +190,8 @@ def load_model(path):
 def main():
 
     MODELPATH=""
-    MODELNAME=MODELPATH.split('.')[0]
+    MODELNAME=MODELPATH.split('.')[1].split('/')[1]
+    print(MODELNAME)
     
     global patch_size, stride
     patch_size = 224  # 패치 크기
