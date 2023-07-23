@@ -17,7 +17,7 @@ import gc
 
 from hrnet import HRNet,config
 from unet import UNet
-for deepunet import DeepUNet
+from deepunet import DeepUNet
 from deeplabV3plus import DeepLabv3_plus
 from deeplabV3plus_Xception import DeepLabv3_plus_Xception
 
@@ -165,6 +165,17 @@ def predict(model,test_dataloader):
                 else:
                     result.append(mask_rle)
     return result
+
+def ensemble(models, test_dataloader):
+    results = []
+    for model in models:
+        result=predict(model,test_dataloader)
+        results.append(result)
+    
+    # 각 모델의 결과를 평균하여 최종 결과를 생성
+    final_result = np.mean(results, axis=0)
+    
+    return final_result
 
 
 def sumbit_save(result,name=""):
