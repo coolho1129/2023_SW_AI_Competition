@@ -83,7 +83,21 @@ def rle_encode(mask):
     return ' '.join(str(x) for x in runs)
 
 
-def visualize_images(dataset,start, end):
+def visualize_images(start, end):
+      # transform 설정
+    transform = A.Compose(
+        [   
+            A.Normalize(),
+            ToTensorV2()
+        ]
+    )
+    test=pd.read_csv('./test.csv')
+    submit=pd.read_csv(PATH)
+    test['mask_rle']=submit['mask_rle']
+
+    test.to_csv('./viusal_test.csv',index=False)
+
+    dataset = SatelliteDataset(csv_file='./viusal_test.csv',transform=transform)
     for x in range(start, end+1, 10):
         fig = plt.figure(figsize=(12, 6))
         for i in range(x, x+10):
@@ -100,24 +114,12 @@ def visualize_images(dataset,start, end):
         plt.close()
 
 
-  # transform 설정
-transform = A.Compose(
-        [   
-            A.Normalize(),
-            ToTensorV2()
-        ]
-    )
 
-test=pd.read_csv('./test.csv')
-submit=pd.read_csv('./stride100_divied_deeplab_70.csv')
-test['mask_rle']=submit['mask_rle']
 
-test.to_csv('./viusal_test.csv',index=False)
-
-df = SatelliteDataset(csv_file='./viusal_test.csv',transform=transform)
-print(df)
-
-visualize_images(df,70,99)
+#print(df)
+global PATH
+PATH = "" # submit.csv 파일의 경로를 입력하세요.
+visualize_images(70,99)
 
 
     
