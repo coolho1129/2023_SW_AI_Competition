@@ -17,6 +17,7 @@ import gc
 
 from hrnet import HRNet,config
 from unet import UNet
+for deepunet import DeepUNet
 from deeplabV3plus import DeepLabv3_plus
 from deeplabV3plus_Xception import DeepLabv3_plus_Xception
 
@@ -215,6 +216,7 @@ def main():
 
    # model 초기화
     model = UNet().to(device)
+    #model = DeepUNet().to(device)
     #model=DeepLabv3_plus(nInputChannels=3, n_classes=1, os=16, pretrained=True).to(device)
     #model=DeepLabv3_plus_Xception(nInputChannels=3, n_classes=1, os=16, pretrained=True).to(device)
     #model=HRNet(config).to(device)
