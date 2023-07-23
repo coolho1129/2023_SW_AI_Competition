@@ -1,4 +1,4 @@
-class UNet(nn.Module):
+class DeepUNet(nn.Module):
     def __init__(self):
         super(UNet, self).__init__()
         self.dconv_down1 = self.double_conv(3, 64)
