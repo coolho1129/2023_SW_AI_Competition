@@ -146,6 +146,7 @@ def train(model,criterion,optimizer,dataloader):
         print(f'Epoch {epoch+1}, Loss: {epoch_loss/len(dataloader)}')
     
     return model
+
 def predict(model,test_dataloader):
     with torch.no_grad():
         model.eval()
@@ -156,6 +157,7 @@ def predict(model,test_dataloader):
             outputs = model(image)
             mask = torch.sigmoid(outputs).cpu().numpy()
             mask = np.squeeze(mask, axis=1)
+            
             mask = (mask > 0.35).astype(np.uint8) # Threshold = 0.35
 
             for i in range(len(image)):
@@ -166,16 +168,38 @@ def predict(model,test_dataloader):
                     result.append(mask_rle)
     return result
 
-def ensemble(models, test_dataloader):
-    results = []
-    for model in models:
-        result=predict(model,test_dataloader)
-        results.append(result)
-    
-    # 각 모델의 결과를 평균하여 최종 결과를 생성
-    final_result = np.mean(results, axis=0)
-    
+def ensemble_masks(models, test_dataloader, threshold=0.35):
+    with torch.no_grad():
+        results = []
+        for model in models:
+            model.eval()
+            result = []
+            for image in tqdm(test_dataloader):
+                image = image.float().to(device)
+                outputs = model(image)
+                mask = torch.sigmoid(outputs).cpu().numpy()
+                mask = np.squeeze(mask, axis=1)
+                result.append(mask)
+
+            results.append(result)
+
+        # 각 모델의 mask들을 평균하여 최종 mask를 생성
+        final_mask = np.mean(results, axis=0)
+
+        # Threshold를 적용하여 최종 mask 생성
+        final_mask = (final_mask > threshold).astype(np.uint8)
+
+        # 각 이미지에 대해 RLE 인코딩을 수행하여 최종 결과 생성
+        final_result = []
+        for masks in final_mask:
+            for mask in masks:
+                mask_rle = rle_encode(mask)
+                if mask_rle == '':
+                    final_result.append(-1)
+                else:
+                    final_result.append(mask_rle)
     return final_result
+
 
 
 def sumbit_save(result,name=""):
@@ -243,6 +267,8 @@ def main():
     
     #모델 불러오기
     #model = load_model(MODELPATH)
+    models=[]
+    models.append(model)
 
     #test dataset 설정
     test_dataset,test_dataloader=set_test_dataset(TESTPATH,transform)
