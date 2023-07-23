@@ -168,7 +168,7 @@ def predict(model,test_dataloader):
                     result.append(mask_rle)
     return result
 
-def ensemble_masks(models, test_dataloader, threshold=0.35):
+def ensemble(models, test_dataloader):
     with torch.no_grad():
         results = []
         for model in models:
@@ -187,7 +187,7 @@ def ensemble_masks(models, test_dataloader, threshold=0.35):
         final_mask = np.mean(results, axis=0)
 
         # Threshold를 적용하여 최종 mask 생성
-        final_mask = (final_mask > threshold).astype(np.uint8)
+        final_mask = (final_mask > 0.35).astype(np.uint8)
 
         # 각 이미지에 대해 RLE 인코딩을 수행하여 최종 결과 생성
         final_result = []
@@ -227,6 +227,7 @@ def main():
     MODELPATH=""
     MODELNAME=MODELPATH.split('.')[1].split('/')[1]
     print(MODELNAME)
+    ensemble_modelpath=['','','']
     
     global patch_size, stride
     patch_size = 224  # 패치 크기
@@ -267,14 +268,21 @@ def main():
     
     #모델 불러오기
     #model = load_model(MODELPATH)
-    models=[]
-    models.append(model)
+    
 
     #test dataset 설정
     test_dataset,test_dataloader=set_test_dataset(TESTPATH,transform)
 
     # 예측
     result=predict(model,test_dataloader)
+    
+    # 앙상블
+    models=[]
+    for modelpath in ensemble_modelpath:
+        model=load_model(modelpath)
+        models.append(model)
+    
+    result=ensemble(models, test_dataloader)
     
     #제출 파일 저장
     sumbit_save(result, MODELNAME)
