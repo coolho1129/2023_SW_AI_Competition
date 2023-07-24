@@ -15,11 +15,11 @@ from albumentations.pytorch import ToTensorV2
 
 import gc
 
-from hrnet import HRNet,config
-from unet import UNet
-from deepunet import DeepUNet
-from deeplabV3plus import DeepLabv3_plus
-from deeplabV3plus_Xception import DeepLabv3_plus_Xception
+from hrnet import *
+from unet import *
+from deepunet import *
+from deeplabV3plus import *
+from deeplabV3plus_Xception import *
 
 class SatelliteDataset(Dataset):
     def __init__(self, csv_file, patch_size, stride, transform=None, infer=False):
