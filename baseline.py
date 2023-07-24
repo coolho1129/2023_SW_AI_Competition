@@ -15,11 +15,11 @@ from albumentations.pytorch import ToTensorV2
 
 import gc
 
-from hrnet import HRNet,config
-from unet import UNet
-from deepunet import DeepUNet
-from deeplabV3plus import DeepLabv3_plus
-from deeplabV3plus_Xception import DeepLabv3_plus_Xception
+from hrnet import *
+from unet import *
+from deepunet import *
+from deeplabV3plus import *
+from deeplabV3plus_Xception import *
 
 class SatelliteDataset(Dataset):
     def __init__(self, csv_file, patch_size, stride, transform=None, infer=False):
@@ -38,9 +38,8 @@ class SatelliteDataset(Dataset):
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
         if self.infer:
-            patches = split_image(image, self.patch_size, self.stride)
-            transformed_patches = [self.transform(image=patch)["image"] for patch in patches]
-            return transformed_patches
+            image = self.transform(image=image)['image']
+            return image
 
         mask_rle = self.data.iloc[idx, 2]
         mask = rle_decode(mask_rle, (image.shape[0], image.shape[1]))

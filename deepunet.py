@@ -1,6 +1,9 @@
+import torch
+import torch.nn as nn
+
 class DeepUNet(nn.Module):
     def __init__(self):
-        super(UNet, self).__init__()
+        super(DeepUNet, self).__init__()
         self.dconv_down1 = self.double_conv(3, 64)
         self.dconv_down2 = self.double_conv(64, 64)
 

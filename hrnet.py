@@ -478,7 +478,10 @@ class HRNet(nn.Module):
             self.load_state_dict(model_dict)
 
 
-config = {
+
+
+def get_seg_model(device):
+    config = {
     'MODEL': {
         'PRETRAINED_LAYERS': ['*'],
         'STEM_INPLANES': 64,
@@ -521,8 +524,6 @@ config = {
         'NUM_CLASSES': 1,  # 이진 세그멘테이션을 위해 1로 설정합니다 (예: 건물 vs 배경)
     }
 }
-
-def get_seg_model(device):
     model = HRNet(config).to(device)  # HRNet 클래스의 인스턴스를 생성하여 디바이스로 이동
     model.init_weights()  # 사전 학습된 가중치로 모델 초기화
 
