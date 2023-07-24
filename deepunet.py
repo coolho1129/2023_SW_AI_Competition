@@ -1,3 +1,6 @@
+import torch
+import torch.nn as nn
+
 class DeepUNet(nn.Module):
     def __init__(self):
         super(UNet, self).__init__()
