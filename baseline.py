@@ -255,7 +255,7 @@ def main():
     #model = DeepUNet().to(device)
     #model=DeepLabv3_plus(nInputChannels=3, n_classes=1, os=16, pretrained=True).to(device)
     #model=DeepLabv3_plus_Xception(nInputChannels=3, n_classes=1, os=16, pretrained=True).to(device)
-    #model=HRNet(config).to(device)
+    #model=get_seg_model(device)
     
 
     # loss function과 optimizer 정의
