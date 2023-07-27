@@ -167,39 +167,6 @@ def predict(model,test_dataloader):
                     result.append(mask_rle)
     return result
 
-def ensemble(models, test_dataloader):
-    with torch.no_grad():
-        results = []
-        for model in models:
-            model.eval()
-            result = []
-            for image in tqdm(test_dataloader):
-                image = image.float().to(device)
-                outputs = model(image)
-                mask = torch.sigmoid(outputs).cpu().numpy()
-                mask = np.squeeze(mask, axis=1)
-                result.append(mask)
-
-            results.append(result)
-
-        # 각 모델의 mask들을 평균하여 최종 mask를 생성
-        final_mask = np.mean(results, axis=0)
-
-        # Threshold를 적용하여 최종 mask 생성
-        final_mask = (final_mask > 0.35).astype(np.uint8)
-
-        # 각 이미지에 대해 RLE 인코딩을 수행하여 최종 결과 생성
-        final_result = []
-        for masks in final_mask:
-            for mask in masks:
-                mask_rle = rle_encode(mask)
-                if mask_rle == '':
-                    final_result.append(-1)
-                else:
-                    final_result.append(mask_rle)
-    return final_result
-
-
 def opt_ensemble(models, test_dataloader):
     with torch.no_grad():
         num_models = len(models)
