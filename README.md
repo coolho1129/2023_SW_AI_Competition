@@ -1,4 +1,6 @@
 # 2023_SW_AI_Competition
+[link - SW중심대학 공동 AI 경진대회 2023](https://dacon.io/competitions/official/236092/overview/description)
+
 ![image](https://github.com/mobuktodae/2023_SW_AI_Competition/assets/87495422/11a242d4-d820-4a6b-9794-420526138331)
 
 
@@ -36,30 +38,75 @@
   <br><br>
 
 ## Library
-<img src="https://img.shields.io/badge/python-3.10.1-3776AB"/>  <img src="https://img.shields.io/badge/pytorch-3.10.1-EE4C2C"/> 
+<img src="https://img.shields.io/badge/python-3.10.1-3776AB"/>  <img src="https://img.shields.io/badge/pytorch-1.10.1-EE4C2C"/> 
 <br>
 
-## Usages
-<br>
-
-## Directory structure
-<br>
 
 ## Strategy
 1. data preprocessing
-- 
+- split images
+  
+  train set과 test set의 image size, resolution 보정 및 Data augmentation
 
-2. model train
-- Unet
-- DeepnetV3+
-- Deepunet
-- HRnet
+  ``` patches = split_image(image, self.patch_size, self.stride)
+    mask_patches = split_mask(mask, self.patch_size, self.stride)
+    transformed_patches = [self.transform(image=patch, mask=mask)["image"] for patch,mask in zip(patches, mask_patches)]
+    transformed_masks = [self.transform(image=patch, mask=mask)["mask"] for patch,mask in zip(patches, mask_patches)]
+  ```
+
+
+2. model
+- Segmentation 기본 모델
+  
+  - Unet (baseline으로 제공된 모델)
+    
+    stride : 56, epoch : 13
+  - DeepnetV3+
+    
+    stride : 100,  epoch : 80
+  - HRnet
+    
+    stride : 112 , epoch : 20
+<br>
+
+- 모델 변형 
+  - Deepunet
+    
+    Unet에서 Contracting Step이 한 단계 더 진행된 구조  
+    ```
+    # 
+    self.dconv_down9 = self.double_conv(512, 1024)
+    self.dconv_down10 = self.double_conv(1024, 1024)    
+  
+    self.maxpool = nn.MaxPool2d(2)
+  
+    self.upconv1 = nn.ConvTranspose2d(1024, 512, 2, 2, padding = 0)       
+  
+    self.dconv_up1 = self.double_conv(1024, 512)
+    self.dconv_up2 = self.double_conv(512, 512)
+  
+    ```
+    
+    stride : 112, epoch : 40
+
+<br>    
 
 3. ensemble
 - weight-mean ensemble
-- mean ensemble
+
+#|model|weight
+|--|---|---|
+|0|stride112_hrnet_20.pt|0.3|
+|1|stride112_divided_deepUnet_40_transfer.pt|0.3|
+|2|stride56_divided_unet_13.pt|0.2|
+|3|stride100_divied_deeplab_80.pt|0.2|
 
 <br>
+
+## Final Ranks
+- public : 29th (0.80069)
+- private : 29th (0.79807)
+
 
 ## Reference
 [U-Net: Convolutional Networks for Biomedical Image Segmentation](https://arxiv.org/abs/1505.04597)
@@ -76,13 +123,13 @@
 ### Team Name
 티파니
 ### Team Members
-Name|Role|github|
-|---|---|---|
-| 문채원 | Team Leader | [mchaewon](https://github.com/mchaewon) |
-| 김은지 | | [mobuktodae](https://github.com/mobuktodae) |
-| 김찬호 | | [coolho1129](https://github.com/coolho1129) |
-| 송혜경 | | [sosschs9](https://github.com/sosschs9) |
-| 하재현 | | [jaehyeonha](https://github.com/jaehyeonha) |
+Name|github|
+|---|---|
+| 문채원(ChaeWon Moon) | [mchaewon](https://github.com/mchaewon) |
+| 김은지(EunJi Kim) | [mobuktodae](https://github.com/mobuktodae) |
+| 김찬호(ChanHo Kim) | [coolho1129](https://github.com/coolho1129) |
+| 송혜경(Hyegyeong Song) | [sosschs9](https://github.com/sosschs9) |
+| 하재현(JaeHyeon Ha) | [jaehyeonha](https://github.com/jaehyeonha) |
 
 
 
