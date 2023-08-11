@@ -126,7 +126,7 @@
 Name|github|
 |---|---|
 | 문채원(ChaeWon Moon) | [mchaewon](https://github.com/mchaewon) |
-| 김은지(EunJi Kim) | [mobuktodae](https://github.com/mobuktodae) |
+| 김은지(EunJi Kim) | [EunJiKim02](https://github.com/EunJiKim02) |
 | 김찬호(ChanHo Kim) | [coolho1129](https://github.com/coolho1129) |
 | 송혜경(Hyegyeong Song) | [sosschs9](https://github.com/sosschs9) |
 | 하재현(JaeHyeon Ha) | [jaehyeonha](https://github.com/jaehyeonha) |
