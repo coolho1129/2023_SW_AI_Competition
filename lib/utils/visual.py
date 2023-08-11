@@ -14,7 +14,7 @@ import albumentations as A
 from albumentations.pytorch import ToTensorV2
 
 from utils.utils import *
-from lib.data.dataset import *
+from lib.datasets.dataset import *
 
 
 def visualize_images(path,start, end):
