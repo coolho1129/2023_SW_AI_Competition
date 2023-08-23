@@ -61,7 +61,7 @@
   - Unet (baseline으로 제공된 모델)
     
     stride : 56, epoch : 13
-  - DeepnetV3+
+  - DeeplabV3+
     
     stride : 100,  epoch : 80
   - HRnet
