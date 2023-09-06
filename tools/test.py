@@ -1,39 +1,48 @@
 
 from torch.utils.data import  DataLoader
 
-from lib.datasets.dataset import *
-from lib.models.hrnet import *
-from lib.models.unet import *
-from lib.models.deepunet import *
-from lib.models.deeplabV3plus import *
-from lib.utils.utils import *
-from lib.core.function import *
+from libs.datasets.dataset import *
+from libs.models.hrnet import *
+from libs.models.unet import *
+from libs.models.deepunet import *
+from libs.models.deeplabV3plus import *
+from libs.utils.utils import *
+from libs.core.function import *
 
-def set_test_dataset(path,transform):
-    dataset = SatelliteDataset(csv_file=path, transform=transform, infer=True, patch_size=patch_size, stride=stride)
-    dataloader = DataLoader(dataset, batch_size=batchsize, shuffle=False, num_workers=4)
+def set_test_dataset(path,transform, batchsize,num_workers):
+    dataset = SatelliteDataset(csv_file=path, transform=transform,infer=True)
+    dataloader = DataLoader(dataset, batch_size=batchsize, shuffle=False, num_workers=num_workers)
 
     return dataset,dataloader
 
 def main():
     
-    init()
-
-    MODELPATH=""
-    MODELNAME=MODELPATH.split('.')[1].split('/')[1]
-    print(MODELNAME)
+    device,num_workers = init(path  = os.path.dirname(__file__))
+    transform = A.Compose(
+        [   
+            A.Normalize(),
+            ToTensorV2()
+        ]
+    )
+    
+    batchsize=16
+    
+    modelpt=""
+    modelname=modelpt.split('.')[1].split('/')[1]
+    print(modelname)
     
     #모델 불러오기
-    model = load_model(MODELPATH)
+    model = load_model(modelpt)
     
     #test dataset 설정
-    test_dataset,test_dataloader=set_test_dataset(TESTPATH,transform)
+    testpath = "./test.csv"
+    test_dataset,test_dataloader=set_test_dataset(testpath,transform,batchsize,num_workers)
 
     # 예측
-    result=predict(model,test_dataloader)
+    result=predict(model,device, test_dataloader)
     
     #제출 파일 저장
-    sumbit_save(result, MODELNAME)
+    test_sumbit_save(result,modelname)
 
 if __name__== '__main__':
     main()
