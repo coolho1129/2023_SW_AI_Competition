@@ -45,8 +45,9 @@
 ## Strategy
 1. data preprocessing
 - split images
+- sliding windows
   
-  train set과 test set의 image size, resolution 보정 및 Data augmentation
+  train set과 test set의 image size보정 및 Data augmentation
 
   ``` patches = split_image(image, self.patch_size, self.stride)
     mask_patches = split_mask(mask, self.patch_size, self.stride)
